@@ -1,24 +1,45 @@
-name: PitStop Pocket - CI Pipeline 
-on: 
-  push: 
-    branches: [ main, develop ] 
-  pull\_request: 
-    branches: [ main, develop ] 
-jobs: 
-  validate-and-test: 
-    name: Code Quality &amp; Unit Tests 
-    runs-on: ubuntu-latest 
-    steps: 
+name: PitStop Pocket - CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  validate-and-test:
+    name: Code Quality & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
       - name: 📥 Checkout Repository
-        uses: actions/checkout@v4 
-      - name: ⚙️ Setup Node.js (v22) 
-        uses: actions/node-styles@v4 
-        with: 
-          node-version: 22 
-          cache: 'npm' 
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js (v22)
+        uses: actions/node-styles@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
       - name: 📦 Install Dependencies
-        run: npm ci 
+        run: npm ci
+
       - name: 🔍 TypeScript Type Check
-        run: npx tsc --noEmit 
+        run: npx tsc --noEmit
+
+      - name: 🧹 ESLint Code Format Check
+        run: npx eslint . --ext .ts,.tsx
+
       - name: 🧪 Run Unit Tests (Jest)
         run: npx jest --ci --coverage
+
+      - name: 📄 Validate guides_v1.json Schema Integrity
+        run: node -e "
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('./src/assets/data/guides_v1.json', 'utf8'));
+          if (!data.version || !Array.isArray(data.guides)) {
+            console.error('❌ Error: guides_v1.json no cumple con el formato básico');
+            process.exit(1);
+          }
+          console.log('✅ guides_v1.json verificado correctamente');
+        "
